@@ -2,7 +2,26 @@
 
 Source code for **HISS**, a subset selection framework for efficient robust post-training. HISS combines proxy-based risk estimation with history-aware similarity scoring to prioritize high-risk and non-redundant samples at lower computational cost.
 
-**Note:** This code is based on ET-BERT and TrafficFormer. Many thanks to the authors of these codebases.
+## Acknowledgements
+
+This implementation is based on the following open-source codebases:
+
+- [ET-BERT](https://github.com/linwhitehat/ET-BERT)
+- [TrafficFormer](https://github.com/IDP-code/TrafficFormer)
+
+We sincerely thank the authors for making their implementations publicly available.
+
+## Repository Scope
+
+This repository is not a standalone reimplementation of ET-BERT or TrafficFormer. Instead, it provides the modified training script used for HISS-based robust post-training. The unchanged backbone-related files are inherited from the original ET-BERT/UER-py and TrafficFormer codebases.
+
+To reproduce the results, users should:
+
+1. Clone the ET-BERT repository.
+2. Install its required dependencies.
+3. Place `run_ser_classifier.py` in the ET-BERT fine-tuning environment.
+4. Download the required pretrained checkpoint and vocabulary files.
+5. Run the commands provided below.
 
 ## Requirements
 
@@ -27,39 +46,55 @@ Please install PyTorch according to your CUDA version.
 
 ## Datasets
 
-The dataset files should follow the TSV format used by ET-BERT/UER-style fine-tuning.
+All datasets used in this paper are obtained from the `datasets` directory of the ET-BERT repository:
 
-For the ISCX-VPN-Service dataset, the expected paths are:
+- [ET-BERT datasets directory](https://github.com/linwhitehat/ET-BERT/tree/main/datasets)
 
-```text
-datasets/ISCX-VPN_Service_dataset/packet/result/train_dataset.tsv
-datasets/ISCX-VPN_Service_dataset/packet/result/valid_dataset.tsv
-datasets/ISCX-VPN_Service_dataset/packet/result/test_dataset.tsv
-```
+Please download the corresponding dataset archives from the ET-BERT repository, decompress them, and organize the processed TSV files as follows.
 
-Each file should contain at least the following columns:
+### Expected Directory Structure
 
 ```text
-label    text_a
+datasets/
+├── ISCX-VPN_Service_dataset/
+│   └── packet/
+│       └── result/
+│           ├── train_dataset.tsv
+│           ├── valid_dataset.tsv
+│           └── test_dataset.tsv
+├── ISCX-VPN_app_dataset/
+│   └── packet/
+│       └── result/
+│           ├── train_dataset.tsv
+│           ├── valid_dataset.tsv
+│           └── test_dataset.tsv
+├── USTC-TFC_dataset/
+│   └── packet/
+│       └── result/
+│           ├── train_dataset.tsv
+│           ├── valid_dataset.tsv
+│           └── test_dataset.tsv
+└── cstnet-tls1.3/
+    └── packet/
+        └── result/
+            ├── train_dataset.tsv
+            ├── valid_dataset.tsv
+            └── test_dataset.tsv
 ```
-
-Optional columns such as `text_b` and `logits` are supported by the code when using sentence-pair classification or soft targets.
 
 ## Pre-trained Models
 
-For ET-BERT experiments, place the pre-trained model and vocabulary files under:
+This repository does not redistribute the original ET-BERT or TrafficFormer pre-trained checkpoints. Please download them from the official release links and place them in the expected paths.
+
+| Backbone | Download link | Expected path |
+| --- | --- | --- |
+| ET-BERT | [Google Drive](https://drive.google.com/file/d/1r1yE34dU2W8zSqx1FkB8gCWri4DQWVtE/view) | `models/pre-trained_model.bin` |
+| TrafficFormer | [Google Drive](https://drive.google.com/file/d/1pR6ZaWE7MWFDQWiF4LDzSyjSq0Gj3kV7/view) | `models/nomoe_bertflow_pre-trained_model.bin-120000` |
+
+The vocabulary and configuration files should also be prepared according to the original ET-BERT and TrafficFormer repositories.
+For convenience, the default paths used by `run_ser_classifier.py` are:
 
 ```text
-models/pre-trained_model.bin
-models/encryptd_vocab.txt
-```
-
-For TrafficFormer experiments, use the corresponding TrafficFormer pre-trained checkpoint and configuration files.
-
-The default TrafficFormer paths in the code are:
-
-```text
-models/nomoe_bertflow_pre-trained_model.bin-120000
 models/encryptd_vocab.txt
 models/bert/base_config.json
 ```
@@ -67,6 +102,8 @@ models/bert/base_config.json
 ## Reproducibility Commands
 
 The following commands reproduce ET-BERT experiments on the ISCX-VPN-Service dataset.
+
+Before running experiments on a different dataset, please modify the `DATASET` variable in `run_ser_classifier.py`, which is used to name output folders and log files. For example, change `DATASET = "ser"` to `DATASET = "app"` for ISCX-VPN-App. The dataset paths in `--train_path`, `--dev_path`, and `--test_path` should also be updated accordingly.
 
 Common setting:
 
@@ -78,7 +115,7 @@ Common setting:
 - Candidate pool size for subset-selection methods: 64
 - Selected batch size for subset-selection methods: 32
 - Candidate pool size is obtained by using `--batch_size 32 --CVaR_alpha 0.5`
-- Main results should be repeated over multiple random seeds, for example `--seed 1`, `--seed 2`, ..., `--seed 5`
+- Main results should be repeated over multiple random seeds
 
 ### HISS
 
@@ -97,23 +134,13 @@ python run_ser_classifier.py \
   --seq_length 128 \
   --learning_rate 2e-5 \
   --method HISS \
-  --CVaR_alpha 0.5 \
   --rm_lr 1e-4 \
-  --loss_hidden_size 256 \
-  --warmup_erm 2 \
-  --rcc_lambda_base 0.1 \
-  --rcc_memory_capacity 96 \
-  --rcc_rbf softmax \
-  --rcc_tau 0.3 \
-  --rcc_min_sigma 1e-6 \
-  --proxy_steps_high 1 \
-  --proxy_steps_low 2 \
-  --proxy_spearman_low 0.3 \
-  --proxy_spearman_window 20 \
-  --proxy_schedule_warmup 10 \
-  --min_delta 1e-6 \
-  --temperature 1.0 \
-  --seed 1
+  --CVaR_alpha 0.5 \
+  --hiss_lambda_base 0.1 \
+  --hiss_memory_capacity 96 \
+  --hiss_rbf softmax \
+  --hiss_tau 0.3 \
+  --seed 9
 ```
 
 ### HISS without History Penalty
@@ -135,18 +162,9 @@ python run_ser_classifier.py \
   --seq_length 128 \
   --learning_rate 2e-5 \
   --method HISS-no-penalty \
-  --CVaR_alpha 0.5 \
   --rm_lr 1e-4 \
-  --loss_hidden_size 256 \
-  --warmup_erm 2 \
-  --proxy_steps_high 1 \
-  --proxy_steps_low 2 \
-  --proxy_spearman_low 0.3 \
-  --proxy_spearman_window 20 \
-  --proxy_schedule_warmup 10 \
-  --min_delta 1e-6 \
-  --temperature 1.0 \
-  --seed 1
+  --CVaR_alpha 0.5 \
+  --seed 9
 ```
 
 ### ERM
@@ -166,7 +184,7 @@ python run_ser_classifier.py \
   --seq_length 128 \
   --learning_rate 2e-5 \
   --method ERM \
-  --seed 1
+  --seed 9
 ```
 
 ### MC-CVaR
@@ -187,7 +205,7 @@ python run_ser_classifier.py \
   --learning_rate 2e-5 \
   --method MC-CVaR \
   --CVaR_alpha 0.5 \
-  --seed 1
+  --seed 9
 ```
 
 ### Random Selection
@@ -208,7 +226,7 @@ python run_ser_classifier.py \
   --learning_rate 2e-5 \
   --method Random \
   --CVaR_alpha 0.5 \
-  --seed 1
+  --seed 9
 ```
 
 ### OHTM
@@ -229,7 +247,7 @@ python run_ser_classifier.py \
   --learning_rate 2e-5 \
   --method OHTM \
   --CVaR_alpha 0.5 \
-  --seed 1
+  --seed 9
 ```
 
 ### GroupDRO
@@ -249,8 +267,8 @@ python run_ser_classifier.py \
   --seq_length 128 \
   --learning_rate 2e-5 \
   --method GroupDRO \
-  --gdro_tau 1.0 \
-  --seed 1
+  --gdro_tau 0.1 \
+  --seed 9
 ```
 
 ### TDRO
@@ -270,9 +288,9 @@ python run_ser_classifier.py \
   --seq_length 128 \
   --learning_rate 2e-5 \
   --method TDRO \
-  --tdro_rho 1e-3 \
-  --tdro_lambda 1.0 \
-  --seed 1
+  --tdro_rho 0.05 \
+  --tdro_lambda 0.05 \
+  --seed 9
 ```
 
 ### Focal Loss
@@ -294,7 +312,7 @@ python run_ser_classifier.py \
   --method Focal \
   --focal_gamma 2.0 \
   --focal_alpha 1.0 \
-  --seed 1
+  --seed 9
 ```
 
 ## Method-specific Parameters
@@ -313,12 +331,9 @@ The key method-specific parameters for HISS are:
 --rcc_tau 0.3
 --rcc_min_sigma 1e-6
 --min_delta 1e-6
---temperature 1.0
 ```
 
-For datasets other than ISCX-VPN-Service, use the dataset-specific value of `--rcc_lambda_base`.
-
-For example, if the final configuration uses `lambda = 0.6` on another dataset, replace:
+For datasets with more severe tail risks than ISCX-VPN-Service, replace:
 
 ```bash
 --rcc_lambda_base 0.1
@@ -339,7 +354,6 @@ The key method-specific parameters are:
 --loss_hidden_size 256
 --warmup_erm 2
 --min_delta 1e-6
---temperature 1.0
 ```
 
 This method does not use the history-aware penalty. Therefore, `--rcc_lambda_base`, `--rcc_memory_capacity`, `--rcc_rbf`, and `--rcc_tau` are not required.
@@ -359,7 +373,7 @@ With `--batch_size 32`, this gives a candidate pool size of 64 and selects 32 sa
 The key method-specific parameter is:
 
 ```text
---gdro_tau 1.0
+--gdro_tau 0.1
 ```
 
 ### TDRO
@@ -367,8 +381,8 @@ The key method-specific parameter is:
 The key method-specific parameters are:
 
 ```text
---tdro_rho 1e-3
---tdro_lambda 1.0
+--tdro_rho 0.05
+--tdro_lambda 0.05
 ```
 
 ### Focal Loss
@@ -381,10 +395,6 @@ The key method-specific parameters are:
 ```
 
 ## Important Notes
-
-Do not pass `--weighted False` on the command line.
-
-In the current argument parser, `--weighted` is parsed with `type=bool`, so passing the string `"False"` may still be interpreted unexpectedly. Omit `--weighted` to keep the default unweighted pairwise ranking loss.
 
 For HISS, MC-CVaR, Random Selection, and OHTM, we use 20 training epochs because only a subset of candidates is used for each update. For ERM, GroupDRO, TDRO, and Focal Loss, we use 10 training epochs.
 
@@ -434,17 +444,4 @@ or
 
 ```text
 TrafficFormer_efficiency_results_ser/
-```
-
-## Citation
-
-If you use this code, please cite the corresponding paper.
-
-```bibtex
-@inproceedings{hiss,
-  title     = {HISS: History-Informed Subset Selection for Efficient Robust Post-training of Encrypted Traffic Foundation Models},
-  author    = {Anonymous},
-  booktitle = {Anonymous Submission},
-  year      = {2026}
-}
 ```
