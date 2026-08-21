@@ -137,7 +137,7 @@ python run_ser_classifier.py \
   --rm_lr 1e-4 \
   --CVaR_alpha 0.5 \
   --hiss_lambda_base 0.1 \
-  --hiss_memory_capacity 96 \
+  --hiss_memory_capacity 320 \
   --hiss_rbf softmax \
   --hiss_tau 0.3 \
   --seed 9
@@ -326,7 +326,7 @@ The key method-specific parameters for HISS are:
 --loss_hidden_size 256
 --warmup_erm 2
 --rcc_lambda_base 0.1
---rcc_memory_capacity 96
+--rcc_memory_capacity 320
 --rcc_rbf softmax
 --rcc_tau 0.3
 --rcc_min_sigma 1e-6
