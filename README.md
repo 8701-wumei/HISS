@@ -23,6 +23,10 @@ To reproduce the results, users should:
 4. Download the required pretrained checkpoint and vocabulary files.
 5. Run the commands provided below.
 
+## Main-Experiment Standard Deviations
+
+The main experiments with ET-BERT are averaged over five random seeds. The corresponding standard deviations for ISCX-VPN-Service, ISCX-VPN-App, USTC-TFC, and CSTNET-TLS 1.3 are provided in [HISS_Main_Experiment_Standard_Deviations.pdf](./HISS_Main_Experiment_Standard_Deviations.pdf).
+
 ## Requirements
 
 The code requires the following major dependencies:
@@ -115,7 +119,7 @@ Common setting:
 - Candidate pool size for subset-selection methods: 64
 - Selected batch size for subset-selection methods: 32
 - Candidate pool size is obtained by using `--batch_size 32 --CVaR_alpha 0.5`
-- Main results should be repeated over multiple random seeds
+- Main experimental results are averaged over five random seeds; the corresponding standard deviations are provided in [`HISS_Main_Experiment_Standard_Deviations.pdf`](./HISS_Main_Experiment_Standard_Deviations.pdf)
 
 ### HISS
 
